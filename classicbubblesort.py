@@ -46,7 +46,7 @@ def soft_index(array_length, hyperparam=1.0):
         else:  
             weights[i] = GCF(i - 0.5, i + 0.5, hyperparam)
     print(weights/weights.sum())
-    return weights / weights.sum() 
+    return weights / weights.sum() #technically dont need ot normalize it
 
 
 def soft_get(array, soft_index_weights):
