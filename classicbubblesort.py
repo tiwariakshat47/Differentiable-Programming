@@ -17,7 +17,7 @@ def GCF(a, b, hyperparam):
     Args:
         a (float): Lower bound.
         b (float): Upper bound.
-        temperature (float): Controls the sharpness of the function.
+        hyperparam (float): Controls the sharpness of the function.
 
     Returns:
         float: GCF weight for the given range.
