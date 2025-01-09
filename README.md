@@ -1,2 +1,2 @@
-# DiffMergeSort
-Differentiable Merge Sort
+# DiffBubbleSort
+Differentiable Bubble Sort
