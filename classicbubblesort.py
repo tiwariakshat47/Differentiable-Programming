@@ -1,145 +1,120 @@
 import numpy as np
-from scipy.stats import norm  # For Gaussian CDF
-
-
+#classic bubble sort
 def bubble_sort(arr):
-    n = len(arr)
-    for i in range(n):
-        for j in range(i, n):
-            if arr[i] > arr[j]:
-                arr[i], arr[j] = arr[j], arr[i]
+    for i in range(len(arr)):
+        for j in range(len(arr)-i-1):
+            if arr[j] > arr[j+1]:
+                arr[j], arr[j+1] = arr[j+1], arr[j]
+    return arr
+def apply_gaussian_to_array(array, sigma=1.0):
+    size = len(array)
+    distributions = []
+    for i in range(size):
+        indices = np.arange(size)
+        distances = indices - i
+        weights = np.exp(-0.5 * (distances / sigma) ** 2)
+        weights /= weights.sum()
+        distributions.append(torch.tensor(weights, dtype=torch.float32))
+    return distributions
 
-#GCF function using bounds a, b
-def GCF(a, b, hyperparam):
-    """
-    Gaussian Cumulative Function (GCF) between bounds a and b.
+#Creating 4 functions razvan suggested: softindex (done above), softget, softswap, softset
 
-    Args:
-        a (float): Lower bound.
-        b (float): Upper bound.
-        hyperparam (float): Controls the sharpness of the function.
-
-    Returns:
-        float: GCF weight for the given range.
-    """
-    return norm.cdf(b, scale=hyperparam) - norm.cdf(a, scale=hyperparam)
-
-#using math from andy
-def soft_index(array_length, hyperparam=1.0):
-    """
-    Generate soft indices as a probability distribution.
-
-    Args:
-        array_length (int): Length of the array.
-        soft_position (float): The soft index position.
-        temperature (float): Controls the sharpness of the weights.
-
-    Returns:
-        np.ndarray: Normalized weights for the soft index.
-    """
-    weights = np.zeros(array_length)
-    for i in range(array_length):
-        if i == 0:  
-            weights[i] = GCF(-np.inf, i + 0.5, hyperparam)
-        elif i == array_length - 1:  
-            weights[i] = GCF(i - 0.5, np.inf, hyperparam)
-        else:  
-            weights[i] = GCF(i - 0.5, i + 0.5, hyperparam)
-    print(weights/weights.sum())
-    return weights / weights.sum() #technically dont need ot normalize it
+def softget(arr, index_distribution):
+    return torch.dot(torch.tensor(index_distribution, dtype=torch.float32), arr)
 
 
-def soft_get(array, soft_index_weights):
-    """
-    Perform a soft get operation using weights.
 
-    Args:
-        array (np.ndarray): The input array.
-        soft_index_weights (np.ndarray): Probability distribution over the array indices.
-
-    Returns:
-        float: The softly accessed value.
-    """
-    return np.dot(soft_index_weights, array)  
-
-#not sure if this is right
-# def soft_swap(array, soft_i_weights, soft_j_weights):
-#     """
-#     Perform a soft swap operation between two indices.
-
-#     Args:
-#         array (np.ndarray): The input array.
-#         soft_i_weights (np.ndarray): Weights for the first index.
-#         soft_j_weights (np.ndarray): Weights for the second index.
-
-#     Returns:
-#         np.ndarray: The updated array after soft swapping.
-#     """
-#     i_value = soft_get(array, soft_i_weights)
-#     j_value = soft_get(array, soft_j_weights)
-
-#     swapped_array = array.copy()
-    
-#     for k in range(len(array)):
-#         swapped_array[k] = (
-#            ? idk 
-#         )
-#     return swapped_array
+def softset(arr, index_distribution, value):
+    # linear interpolation?
+    #example: use complement to not scale down: ensures that the other elements retain their original values, weighted appropriately
+    # origin: arr = [1, 2, 3], index dist: w = [0.2, 0.5, 0.3] if val to be set is 10
+    # then do --> i[0] --> new_arr[0]=(1−0.2)⋅1+0.2⋅10=0.8⋅1+2.0= 2.8
+    # i[1] --> new_arr[1]=(1−0.5)⋅2+0.5⋅10=0.5⋅2+5.0= 6.0
+    # i[2] --> new_arr[2]=(1−0.3)⋅3+0.3⋅10=0.7⋅3+3.0= 5.1
+    index_distribution = torch.tensor(index_distribution, dtype=torch.float32)
+    return arr * (1 - index_distribution) + index_distribution * value
 
 
-def soft_set(array, soft_index_weights, value):
-    """
-    Perform a soft set operation on the array.
 
-    Args:
-        array (np.ndarray): The input array.
-        soft_index_weights (np.ndarray): Probability distribution over the array indices.
-        value (float): The value to softly set.
+def softswap(arr, index_dist1, index_dist2):
+    arr = arr.clone() 
+    value1 = softget(arr, index_dist1)
+    value2 = softget(arr, index_dist2)
 
-    Returns:
-        np.ndarray: The updated array after the soft set.
-    """
-    updated_array = array.copy()
-    for k in range(len(array)):
-        updated_array[k] = array[k] * (1 - soft_index_weights[k]) + value * soft_index_weights[k]
-    return updated_array
+    new_arr = softset(arr, index_dist1, value2)
+    new_arr = softset(new_arr, index_dist2, value1)
+
+    return new_arr
 
 
-def soft_bubble_sort(array, temperature=1.0):
-    """
-    Perform a differentiable (soft) bubble sort on the array.
+#permutation distance or swap distance instead
 
-    Args:
-        array (np.ndarray): The array to be softly sorted.
-        temperature (float): Controls the smoothness of the sorting.
-
-    Returns:
-        np.ndarray: The softly sorted array.
-    """
-    n = len(array)
-    sorted_array = array.copy()
-
-    for i in range(n):
-        for j in range(n - i - 1):
-            soft_i_weights = soft_index(n, j, temperature)
-            soft_j_weights = soft_index(n, j + 1, temperature)
-
-            vi = soft_get(sorted_array, soft_i_weights)
-            vj = soft_get(sorted_array, soft_j_weights)
-
-            if vi > vj: 
-                sorted_array = soft_swap(sorted_array, soft_i_weights, soft_j_weights)
-
-    return sorted_array
+def compute_loss(soft_sorted_array, classical_sorted_array):
+    return torch.mean((soft_sorted_array - classical_sorted_array) ** 2)
 
 
-def main():
-    # Test soft bubble sort
-    soft_arr = np.array([64, 34, 25, 12, 22, 11, 90])
-    temperature = 1.0
-    sorted_soft_arr = soft_bubble_sort(soft_arr, temperature)
-    print("Soft Bubble Sort - Softly sorted array:", sorted_soft_arr, "\n")
 
 
-if __name__ == "__main__":
-    main()
+def soft_bubble_sort(arr, distributions, y, iterations=1):
+    size = len(arr)
+    arr = arr.clone()
+
+    for _ in range(iterations):
+        for i in range(size - int(y.item())):
+            dist1 = distributions[i]
+            dist2 = distributions[i + int(y.item())]
+
+            val1 = softget(arr, dist1)
+            val2 = softget(arr, dist2)
+
+            if val1 > val2:
+                arr = softswap(arr, dist1, dist2)
+
+    return arr
+
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import matplotlib.pyplot as plt
+#!pip install -q transformers
+
+
+array = torch.tensor([30.0, 1.0, 100.0, 5.0, 2.0, 75.0, 50.0, 10.0, 40.0, 60.0], requires_grad=False)  # keep this as false so we don't modify actual array
+
+sigma = 0.3
+distributions = apply_gaussian_to_array(array, sigma)
+
+classical_sorted_array = torch.tensor(bubble_sort(array.clone().tolist()), dtype=torch.float32)
+
+dist_param = torch.nn.Parameter(torch.tensor(2.0))
+optimizer = torch.optim.Adam([dist_param], lr=0.01)
+
+losses = []
+soft_sorted_arrays = []
+
+num_epochs = 500
+
+for epoch in range(num_epochs):
+    optimizer.zero_grad()
+
+    soft_sorted_array = soft_bubble_sort(array, distributions, y=dist_param, iterations=5)
+    loss = compute_loss(soft_sorted_array, classical_sorted_array)
+    loss.backward()
+    optimizer.step()
+    losses.append(loss.item())
+    soft_sorted_arrays.append(soft_sorted_array.detach().cpu().numpy())
+    y.data = torch.clamp(y.data, min=1.0, max=2.0)
+
+    if epoch % 50 == 0:
+        print(f"Epoch {epoch}, Loss: {loss.item()}, y: {y.item()}")
+
+print(f"Softly sorted array: {soft_sorted_array}")
+print(f"Classically sorted array: {classical_sorted_array}")
+
+plt.figure(figsize=(10, 5))
+plt.plot(losses)
+plt.title("Loss Curve")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.show()
