@@ -30,7 +30,7 @@ def apply_gaussian_to_array(array, sigma=1.0):
 #Creating 4 functions razvan suggested: softindex (done above), softget, softswap, softset
 
 def softget(arr, index_distribution):
-    return torch.dot(torch.tensor(index_distribution, dtype=torch.float32), arr)
+    return torch.dot(index_distribution.clone().detach().requires_grad_(True), arr)
 
 
 
@@ -41,7 +41,7 @@ def softset(arr, index_distribution, value):
     # then do --> i[0] --> new_arr[0]=(1−0.2)⋅1+0.2⋅10=0.8⋅1+2.0= 2.8
     # i[1] --> new_arr[1]=(1−0.5)⋅2+0.5⋅10=0.5⋅2+5.0= 6.0
     # i[2] --> new_arr[2]=(1−0.3)⋅3+0.3⋅10=0.7⋅3+3.0= 5.1
-    index_distribution = torch.tensor(index_distribution, dtype=torch.float32)
+    index_distribution = index_distribution.clone().detach().requires_grad_(True)
     return arr * (1 - index_distribution) + index_distribution * value
 
 
@@ -68,11 +68,16 @@ def compute_loss(soft_sorted_array, classical_sorted_array):
 def soft_bubble_sort(arr, distributions, y, iterations=1):
     size = len(arr)
     arr = arr.clone()
+    arr.requires_grad = True
 
     for _ in range(iterations):
-        for i in range(size - int(y.item())):
+        # print(y)
+        # print(torch.Tensor([size]))
+        # print(torch.sub(torch.Tensor([size]), y))
+        i_range = round(torch.sub(torch.Tensor([size]), y).item())
+        for i in range(i_range):
             dist1 = distributions[i]
-            dist2 = distributions[i + int(y.item())]
+            dist2 = distributions[round(torch.add(torch.Tensor([i]), y).item())]
 
             val1 = softget(arr, dist1)
             val2 = softget(arr, dist2)
@@ -92,13 +97,13 @@ distributions = apply_gaussian_to_array(array, sigma)
 
 classical_sorted_array = torch.tensor(bubble_sort(array.clone().tolist()), dtype=torch.float32)
 
-dist_param = torch.nn.Parameter(torch.tensor(2.0))
-optimizer = torch.optim.Adam([dist_param], lr=0.01)
+dist_param = torch.tensor(1.0, requires_grad=True)
+optimizer = torch.optim.SGD([dist_param], lr=0.3)
 
 losses = []
 soft_sorted_arrays = []
 
-num_epochs = 500
+num_epochs = 5
 
 for epoch in range(num_epochs):
     optimizer.zero_grad()
@@ -107,9 +112,11 @@ for epoch in range(num_epochs):
     loss = compute_loss(soft_sorted_array, classical_sorted_array)
     loss.backward()
     optimizer.step()
+    # print(f'dist_param: {dist_param}')
+    # print(f'dist_param grad: {dist_param.grad}')
     losses.append(loss.item())
     soft_sorted_arrays.append(soft_sorted_array.detach().cpu().numpy())
-    dist_param.data = torch.clamp(y.data, min=1.0, max=2.0)
+    # dist_param.data = torch.clamp(dist_param.data, min=1.0, max=2.0)
 
     if epoch % 50 == 0:
         print(f"Epoch {epoch}, Loss: {loss.item()}, y: {dist_param.item()}")
@@ -117,9 +124,9 @@ for epoch in range(num_epochs):
 print(f"Softly sorted array: {soft_sorted_array}")
 print(f"Classically sorted array: {classical_sorted_array}")
 
-plt.figure(figsize=(10, 5))
-plt.plot(losses)
-plt.title("Loss Curve")
-plt.xlabel("Epoch")
-plt.ylabel("Loss")
-plt.show()
+# plt.figure(figsize=(10, 5))
+# plt.plot(losses)
+# plt.title("Loss Curve")
+# plt.xlabel("Epoch")
+# plt.ylabel("Loss")
+# plt.show()
