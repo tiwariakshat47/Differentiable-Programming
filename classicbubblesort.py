@@ -1,4 +1,12 @@
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import matplotlib.pyplot as plt
+
+#!pip install -q transformers
+
+
 #classic bubble sort
 def bubble_sort(arr):
     for i in range(len(arr)):
@@ -6,6 +14,8 @@ def bubble_sort(arr):
             if arr[j] > arr[j+1]:
                 arr[j], arr[j+1] = arr[j+1], arr[j]
     return arr
+
+
 def apply_gaussian_to_array(array, sigma=1.0):
     size = len(array)
     distributions = []
@@ -73,11 +83,6 @@ def soft_bubble_sort(arr, distributions, y, iterations=1):
     return arr
 
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import matplotlib.pyplot as plt
-#!pip install -q transformers
 
 
 array = torch.tensor([30.0, 1.0, 100.0, 5.0, 2.0, 75.0, 50.0, 10.0, 40.0, 60.0], requires_grad=False)  # keep this as false so we don't modify actual array
@@ -104,10 +109,10 @@ for epoch in range(num_epochs):
     optimizer.step()
     losses.append(loss.item())
     soft_sorted_arrays.append(soft_sorted_array.detach().cpu().numpy())
-    y.data = torch.clamp(y.data, min=1.0, max=2.0)
+    dist_param.data = torch.clamp(y.data, min=1.0, max=2.0)
 
     if epoch % 50 == 0:
-        print(f"Epoch {epoch}, Loss: {loss.item()}, y: {y.item()}")
+        print(f"Epoch {epoch}, Loss: {loss.item()}, y: {dist_param.item()}")
 
 print(f"Softly sorted array: {soft_sorted_array}")
 print(f"Classically sorted array: {classical_sorted_array}")
