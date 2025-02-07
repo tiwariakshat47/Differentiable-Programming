@@ -75,7 +75,7 @@ def compute_loss(soft_sorted_array, classical_sorted_array):
 
 
 
-def soft_bubble_sort(arr, distributions, y, iterations=1):
+def soft_bubble_sort(arr, distributions, offset, iterations=1):
     size = len(arr)
     arr = arr.clone()
     arr.requires_grad = True
@@ -84,10 +84,10 @@ def soft_bubble_sort(arr, distributions, y, iterations=1):
         # print(y)
         # print(torch.Tensor([size]))
         # print(torch.sub(torch.Tensor([size]), y))
-        i_range = round(torch.sub(torch.Tensor([size]), y).item())
+        i_range = round(torch.sub(torch.Tensor([size]), offset).item())
         for i in range(i_range):
             dist1 = distributions[i]
-            dist2_i = torch.add(torch.Tensor([i]), y)
+            dist2_i = torch.add(torch.Tensor([i]), offset)
             # print(y.grad)
             dist2 = distributions[round(dist2_i.item())]
             val1 = softget(arr, dist1)
@@ -105,19 +105,14 @@ def soft_bubble_sort(arr, distributions, y, iterations=1):
 
 
 array = torch.tensor([30.0, 1.0, 100.0, 5.0, 2.0, 75.0, 50.0, 10.0, 40.0, 60.0], requires_grad=False)  # keep this as false so we don't modify actual array
-# [1, 2, 5, 10, 30, 40, 50, 60, 75, 100]
-# [4, 0, 9, ]
-
-# [0, 0, 0, 0, 1, 0, 0, 0, 0]
-# [1, 0, 0, 0, 0, 0, 0, 0, 0]
 
 sigma = 0.3
 distributions = apply_gaussian_to_array(array, sigma)
 
 classical_sorted_array = torch.tensor(bubble_sort(array.clone().tolist()), dtype=torch.float32)
 
-dist_param = torch.tensor(2.0, requires_grad=True)
-optimizer = torch.optim.SGD([dist_param], lr=0.3)
+offset_param = torch.tensor(2.0, requires_grad=True)
+optimizer = torch.optim.SGD([offset_param], lr=0.3)
 
 losses = []
 soft_sorted_arrays = []
@@ -127,7 +122,7 @@ num_epochs = 4
 for epoch in range(num_epochs):
     optimizer.zero_grad()
 
-    soft_sorted_array = soft_bubble_sort(array, distributions, y=dist_param, iterations=5)
+    soft_sorted_array = soft_bubble_sort(array, distributions, offset=offset_param, iterations=5)
     loss = compute_loss(soft_sorted_array, classical_sorted_array)
     # print(loss)
     loss.register_hook(lambda grad: print(f'loss grad: {grad}'))
@@ -144,7 +139,7 @@ for epoch in range(num_epochs):
     # dist_param.data = torch.clamp(dist_param.data, min=1.0, max=2.0)
 
     if epoch % 50 == 0:
-        print(f"Epoch {epoch}, Loss: {loss.item()}, y: {dist_param.item()}")
+        print(f"Epoch {epoch}, Loss: {loss.item()}, y: {offset_param.item()}")
 
 print(f"Softly sorted array: {soft_sorted_array}")
 print(f"Classically sorted array: {classical_sorted_array}")
