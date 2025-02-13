@@ -68,7 +68,7 @@ if __name__ == "__main__":
     print(f"softget(a, index=1, sigma=0.4): {softget(a, 1, 0.4)}")
     print(f"softget(a, index=0.5, sigma=0.4): {softget(a, 0.5, 0.4)}")
 
-    sigma = 0.5
+    sigma = 0.3
     indices = torch.arange(0, a.size(0)-1, 0.1)
     soft_steps = [softget(a, i, sigma) for i in indices]
     plt.figure(figsize=(10, 5))
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     plt.xlabel("index")
     plt.ylabel("softget(index)")
     plt.title(f"array: {a}, sigma: {sigma}")
-    # plt.show()
+    plt.show()
 
     print("\n--- softset() ---")
     print(f"softset(a, index=2, value=0.0, sigma=0.5): {a} -> {softset(a, 2, 0.0, 0.5)}")
