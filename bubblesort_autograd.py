@@ -2,8 +2,11 @@
 
 import autograd.numpy as np
 from autograd import grad
-from autograd.misc.optimizers import adam
+from autograd.misc.optimizers import adam, sgd
 import matplotlib.pyplot as plt
+from tqdm import tqdm
+
+from plotting import plot_losses_wrt_offsets, plot_losses_offsets_wrt_epoch, plot_losses_sigmas, plot_losses_wrt_epoch
 
 
 def mse_loss(soft_sorted_array, classical_sorted_array):
@@ -52,6 +55,10 @@ def softswap(arr, index_1, index_2, sigma):
     return arr
 
 
+def softif(condition: float, true_branch: np.ndarray, false_branch: np.ndarray):
+    return (condition * true_branch) - ((1.0 * condition) * false_branch)
+
+
 def bubble_sort(arr):
     for i in range(len(arr)):
         for j in range(len(arr)-i-1):
@@ -62,6 +69,7 @@ def bubble_sort(arr):
 
 def bubble_sort_soft(arr, offset, sigma):
     for i in range(len(arr)):
+
         j_range = int(np.ceil(len(arr) - i - offset))
         for j in range(j_range):
             val1 = softget(arr, j, sigma)
@@ -75,38 +83,79 @@ def bubble_sort_soft(arr, offset, sigma):
 
 def train():
     sigma = 0.28
-    lr = 0.02
-    num_epochs = 4
-    start_offset = 1.5
+    lr = 0.01
+    num_epochs = 40
+    start_offset = 1.3
 
     arr = np.array([4.0, 3.0, 2.0, 1.0])
 
     classical_sorted_array = bubble_sort(arr.copy())
 
+    losses = []
+    offsets = []
     def objective(params, iter):
         offset = params['offset']
         soft_sorted_array = bubble_sort_soft(arr, offset, sigma)
         loss = mse_loss(soft_sorted_array, classical_sorted_array)
-        print(f"loss: {loss}")
+        print(f"loss: {loss._value}")
+        losses.append(float(loss._value))
+        offsets.append(float(offset._value))
         return loss
 
-    def print_perf(params, iter, gradient):
+    def log_epoch(params, iter, gradient):
         print(f'\nepoch: {iter}')
         print(f"offset: {params['offset']}")
-        print(f'gradients: {gradient}')
+        # print(f'gradients: {gradient}')
 
 
     params = {"offset": start_offset}
-    opt = adam(
+    opt = sgd(
         grad(objective),
         params,
         num_iters=num_epochs,
-        callback=print_perf,
-        step_size=0.1
+        callback=log_epoch,
+        step_size=lr
         )
     
-    print(params)
+    print(losses)
+    print(offsets)
+    plot_losses_offsets_wrt_epoch(losses, offsets)
+
+
+def visualize_loss():
+
+    list_size = 10
+    n_lists = 10
+    sigmas = np.arange(0.28, 0.42, 0.06)
+    offsets = np.arange(0.5, 5, 0.1)
+    loss_fn = mse_loss
+
+    # Random arrays
+    arrs = [np.floor(np.random.rand(list_size) * 100) for i in range(n_lists)]
+
+    # Calculate loss for different values of offset and sigma
+    sigma_losses = {}
+    for sigma in sigmas:
+        print(f'\nsigma: {sigma}')
+        loss_lists = []
+        for a in tqdm(arrs):
+            losses = []
+            for offset in offsets:
+                soft_sorted = bubble_sort_soft(a, offset, sigma)
+                classic_sorted = bubble_sort(a.copy())
+                loss = loss_fn(soft_sorted, classic_sorted).item()
+                losses.append(loss)
+            loss_lists.append(losses)
+        sigma_losses[sigma] = loss_lists
+
+    # Get the mean loss across all the lists
+    mean_sigma_losses = {sigma: [sum(l) / len(l) for l in zip(*loss_lists)]
+                         for sigma, loss_lists in sigma_losses.items()}
+    
+    plot_losses_sigmas(offsets, mean_sigma_losses, f"Averaged {loss_fn.__name__} Loss Gradient With {n_lists} Random Lists") # All Permutations {arr}
+
 
 
 if __name__ == "__main__":
-    train()
+    # train()
+    visualize_loss()
