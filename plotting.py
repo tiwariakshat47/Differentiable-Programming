@@ -21,11 +21,11 @@ def plot_losses_offsets_wrt_epoch(losses, offsets):
     ax2.set_ylabel("Offset", color = 'r')
     plt.show()
 
-def plot_losses_wrt_offsets(offsets, losses, title="Losses"):
+def plot_losses_wrt_param(losses, params, title="Losses"):
     # Graph losses wrt offsets.
-    plt.plot(offsets, losses)
+    plt.plot(losses, params)
     plt.title(title)
-    plt.xlabel("Offset")
+    plt.xlabel("Param")
     plt.ylabel("Loss")
     plt.show()
 
