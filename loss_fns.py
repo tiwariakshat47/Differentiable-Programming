@@ -9,13 +9,17 @@ def mse_loss(pred, target):
 
 def softrank(l):
     # Implementation of Taylor Softranking (2008).
-    variance = 1
+    variance = 2
+
 
     soft_ranks = []
     for j in range(len(l)):
         r = 0
         for i in range(len(l)):
             if i != j:
+                # Equation (9) in Taylor (2008)
+                # norm.cdf integrates from -inf to x
+                # -inf => 0 is same as 0 => inf because Normal is symmetrical.
                 pi_ij = norm.cdf(0, l[i] - l[j], 2 * variance)
                 r += pi_ij
         soft_ranks.append(r)
@@ -23,9 +27,12 @@ def softrank(l):
     return np.array(soft_ranks)
         
 
-
+# Big Q: is there some other way to use softrank other than MSE?
 def softrank_mse_loss(pred, target):
+    # print(softrank(pred))
+    # print(softrank(target))
     return mse_loss(softrank(pred), softrank(target))
+    
 
 
 # def corrcoef_loss(x: torch.Tensor, y: torch.Tensor):

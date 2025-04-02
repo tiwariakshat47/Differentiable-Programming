@@ -29,6 +29,16 @@ def plot_losses_wrt_param(losses, params, title="Losses"):
     plt.ylabel("Loss")
     plt.show()
 
+def plot_multiple_losses_wrt_param(params, losses_dict, title="Losses"):
+    for name, losses in losses_dict.items():
+        plt.plot(params, losses, label=name)
+    plt.title(title)
+    plt.xlabel("Param")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.show()
+
+
 def plot_losses_sigmas(offsets, sigma_losses, title='Loss'):
     # Graph multiple loss for multiple sigma values wrt to offset.
     [plt.plot(offsets, losses, label=f"sigma={str(sigma.item())[:4]}")
