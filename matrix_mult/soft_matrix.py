@@ -63,8 +63,9 @@ if __name__ == "__main__":
     i, j = 0, 1
     sigma = 0.4
     value = 100
-    M[i,j] = 100
+    M_hard = M.copy()
+    M_hard[i,j] = 100
     print(f'hardset({i}, {j}, {value}): ')
-    print(M, end='\n\n')
+    print(M_hard, end='\n\n')
     print(f'softset({i}, {j}, {value}, {sigma}):')
     print(softset_matrix(M, i, j, value, sigma), end='\n\n')
