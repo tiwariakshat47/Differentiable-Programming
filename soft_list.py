@@ -41,3 +41,6 @@ def softswap(arr, index_1, index_2, sigma):
     arr = softset(arr, index_2, value1, sigma)
 
     return arr
+
+
+# TODO: write tests here
