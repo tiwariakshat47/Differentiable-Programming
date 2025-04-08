@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from torchviz import make_dot
 # import torchlens as tl
 from tqdm import tqdm
@@ -10,6 +10,8 @@ import itertools
 
 from soft_list import softindex, softget, softset, softswap
 from loss_fns import mse_loss, corrcoef_loss
+from plotting import plot_losses_wrt_offsets, plot_losses_offsets_wrt_epoch, plot_losses_sigmas
+
 
 
 def bubble_sort(arr):
@@ -69,50 +71,21 @@ def soft_bubble_sort_noloop(arr, offset, sigma):
 
     return arr
 
-def plot_losses_offsets(losses, offsets):
-    # Graph losses and offsets as separate lines wrt time.
-    fig, ax = plt.subplots(figsize = (10, 5))
-    ax2 = plt.twinx()
-    ax.plot(losses, color = 'g')
-    ax2.plot(offsets, color = 'r')
-    plt.title("Loss and Offset Curve")
-    ax.set_xlabel("Epochs")
-    ax.set_ylabel("Loss", color = 'g')
-    ax2.set_ylabel("Offset", color = 'r')
-    plt.show()
-
-def plot_losses(offsets, losses, title="Losses"):
-    # Graph losses wrt offsets.
-    plt.plot(offsets, losses)
-    plt.title(title)
-    plt.xlabel("Offset")
-    plt.ylabel("Loss")
-    plt.show()
-
-def plot_losses_sigmas(offsets, sigma_losses, title='Loss'):
-    # Graph multiple loss for multiple sigma values wrt to offset.
-    [plt.plot(offsets, losses, label=f"sigma={str(sigma.item())[:4]}")
-     for sigma, losses in sigma_losses.items()]
-
-    plt.title(title)
-    plt.xlabel("Offset")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.show()
 
 
 
 def train():
 
     # Hyperparameters
-    sigma = 0.23
+    sigma = 0.28
     lr = 0.02
     num_epochs = 1
-    start_offset = 1.6
+    start_offset = 2.0
 
     # Set requires_grad false so we don't modify ground truth array
     # array = torch.tensor([30.0, 1.0, 100.0, 5.0, 2.0, 75.0, 50.0, 10.0, 40.0, 60.0], requires_grad=False)  
-    array = torch.tensor([2.0, 6.0, 4.0, 1.0], requires_grad=False)
+    # array = torch.tensor([2.0, 6.0, 4.0, 1.0], requires_grad=False)
+    array = torch.tensor([6.0, 2.0, 1.0], requires_grad=False)
 
     classical_sorted_array = torch.tensor(bubble_sort(array.clone().tolist()), dtype=torch.float32)
 
@@ -157,12 +130,12 @@ def visualize_loss():
     # gives a visualization of the loss function so we can evaluate
     # whether the gradient is convex and if there is a minimum at 1.
 
-    n_lists = 50
+    n_lists = 10
     list_size = 10
     # sigma = 0.35
     sigmas = torch.arange(0.28, 0.42, 0.06)
     offsets = torch.arange(0.5, 5, 0.1)
-    loss_fn = corrcoef_loss
+    loss_fn = mse_loss
 
     # arr = torch.tensor([30.0, 1.0, 100.0, 5.0, 2.0, 75.0, 50.0, 10.0, 40.0, 60.0], requires_grad=False)  
     # arr = torch.tensor([93., 74., 59., 84., 81.,  1., 20., 17., 22., 14.], requires_grad=False)
@@ -200,7 +173,9 @@ def visualize_loss():
 def visualize_model():
     # Visualize the computation graph.
 
-    a = torch.tensor([4.0, 3.0, 2.0, 1.0], requires_grad=False)
+    list_size = 2
+    # a = torch.tensor([4.0, 3.0, 2.0, 1.0], requires_grad=False)
+    a = torch.floor(torch.rand(list_size, requires_grad=False) * 100)
     start_offset = 1.0
     sigma = 0.3
 
@@ -216,6 +191,6 @@ def visualize_model():
 
 
 if __name__ == "__main__":
-    # train()
-    visualize_loss()
+    train()
+    # visualize_loss()
     # visualize_model()
