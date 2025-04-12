@@ -20,5 +20,4 @@ Notes:
     - e.g. vigenere cipher
 - frequency analysis is applicable to both, but poly is more durable
 - can apply multiple alphabets to make cipher stronger
-
-
+- Vigenere cipher explained: https://i.imgur.com/D41dV4w.png
