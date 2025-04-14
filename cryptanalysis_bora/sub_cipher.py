@@ -4,7 +4,7 @@
 """
 import string
 import sub_cipher
-from diff_sub_cipher import char_to_index, index_to_char
+from diff_sub_cipher_v1 import char_to_index, index_to_char
 
 """Globals
 """
