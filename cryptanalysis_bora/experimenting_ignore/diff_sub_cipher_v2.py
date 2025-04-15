@@ -2,6 +2,7 @@
 # with KNOWN LENGTH KEY
 # A (partially) known plaintext attack is suitable for cryptanalysis.
 # TODO: implement a ciphertext-only attack (COA)
+# TODO: implement a unknown key length attack
 
 """Imports
 """
