@@ -145,7 +145,7 @@ def loss_fn(candidate_key_shifts, secret, target_onehots, sigma=0.5):
     probs_for_target = np.sum(cipher_probs * target_onehots, axis=1) + eps
     return -np.mean(np.log(probs_for_target))
 
-# TODO: try more loss functions, adjust sigma depending on input size
+# TODO: try more loss functions, adjust sigma depending on input size (?)
 
 ###############
 ### Testing ###

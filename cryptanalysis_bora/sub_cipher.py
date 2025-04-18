@@ -62,6 +62,7 @@ def vigenere_decrypt_discrete(ciphertext, key):
     return plaintext
 
 
+
 # TODO: compare differentiable results with frequency analysis
 def freq_analysis():
     """
